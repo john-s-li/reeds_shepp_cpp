@@ -1,4 +1,4 @@
-#include "reeds_shepp.hpp"
+#include "reeds_shepp.h"
 
 int main() {
   return 0;
