@@ -23,11 +23,13 @@ namespace ReedsShepp {
                 std::vector<char> ctypes, float step_size = 0.1);
 
   rs_tuple SLS(float x, float y, float phi);
-  rs_tuple SCS(float x, float y, float phi);
   rs_tuple LSL(float x, float y, float phi);
   rs_tuple LRL(float x, float y, float phi);
   rs_tuple CCC(float x, float y, float phi);
   rs_tuple CSC(float x, float y, float phi);
   rs_tuple LSR(float x, float y, float phi);
+
+  void SCS(float x, float y, float phi, 
+           std::vector<Path> paths, float step_size);
 
 } // end namespace ReedsShepp
