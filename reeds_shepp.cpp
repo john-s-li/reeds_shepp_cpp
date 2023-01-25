@@ -74,6 +74,23 @@ namespace ReedsShepp {
     return std::make_tuple(false, 0.0, 0.0, 0.0);
   }
 
+  rs_tuple LSR(float x, float y, float phi) {
+    auto [u1, t1] = polar(x + sin(phi), y - 1.0 - cos(phi));
+    u1 = pow(u1, 2);
+    if (u1 >= 4.0) {
+      float u = sqrt(u1 - 4.0);
+      float theta = atan2(2.0, u);
+      float t = mod2pi(t1 + theta);
+      float v = mod2pi(t - phi);
+
+      if (t >= 0.0 && v >= 0.0) {
+        return std::make_tuple(true, t, u, v);
+      }
+    }
+
+    return std::make_tuple(false, 0.0, 0.0, 0.0);
+  }
+
   void SCS(float x, float y, float phi, 
            std::vector<Path> paths, float step_size) {
 
