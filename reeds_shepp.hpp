@@ -17,11 +17,9 @@ namespace ReedsShepp {
     float L{0.0};                // total length of path 
   }; 
 
-
   // forward declarations
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
                 std::vector<char> ctypes, float step_size);
-
 
   //  ===================== utility functions ============================
   
@@ -46,11 +44,6 @@ namespace ReedsShepp {
     float r = sqrt(pow(x, 2) + pow(y, 2));
     float theta = atan2(y, x);
     return std::make_tuple(r, theta);
-  }
-
-  void add_curve(std::vector<Path> &path, float t, float u, float v,
-                 std::vector<char> ctypes) {
-
   }
 
   // ======================== motion primitives =========================
@@ -139,6 +132,7 @@ namespace ReedsShepp {
   void CCC(float x, float y, float phi, 
            std::vector<Path> &paths, float step_size) {
 
+    // forwards
     auto [flag, t, u, v] = LRL(x, y, phi);
     if (flag) {
       set_path(paths, std::vector<float>{t, u, v},
@@ -151,17 +145,99 @@ namespace ReedsShepp {
                std::vector<char>{'L', 'R', 'L'}, step_size);
     }
 
-     std::tie(flag, t, u, v) = LRL(-x, y, -phi);
+     std::tie(flag, t, u, v) = LRL(x, -y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'R', 'L', 'R'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LRL(-x, -y, phi);
     if (flag) {
       set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'R', 'L', 'R'}, step_size);
+    }
+
+    // backwards
+    float xb = x * cos(phi) + y * sin(phi);
+    float yb = x * cos(phi) - y * sin(phi);
+
+    std::tie(flag, t, u, v) = LRL(xb, yb, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{v, u, t},
                std::vector<char>{'L', 'R', 'L'}, step_size);
     }
+
+    std::tie(flag, t, u, v) = LRL(-xb, yb, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-v, -u, -t},
+               std::vector<char>{'L', 'R', 'L'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LRL(xb, -yb, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{v, u, t},
+               std::vector<char>{'R', 'L', 'R'}, step_size);
+    }
     
+    std::tie(flag, t, u, v) = LRL(-xb, -yb, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-v, -u, -t},
+               std::vector<char>{'R', 'L', 'R'}, step_size);
+    }
 
   } // end CCC
 
   void CSC(float x, float y, float phi, 
            std::vector<Path> &paths, float step_size) {
+
+    auto [flag, t, u, v] = LSL(x, y, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'L', 'S', 'L'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSL(-x, y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'L', 'S', 'L'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSL(x, -y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'R', 'S', 'R'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSL(-x, -y, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'R', 'S', 'R'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSR(x, y, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'L', 'S', 'R'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSR(-x, y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'L', 'S', 'R'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSR(x, -y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'R', 'S', 'L'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LSR(-x, -y, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'R', 'S', 'L'}, step_size);
+    }
+
   } // end CSC
 
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
