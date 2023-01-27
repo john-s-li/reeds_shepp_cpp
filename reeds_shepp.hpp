@@ -1,8 +1,30 @@
-#include "reeds_shepp.h"
+#include <math.h>
+#include <vector>
+#include <tuple>
 
 namespace ReedsShepp {
 
-  // utility functions
+  typedef std::tuple<bool, float, float, float> rs_tuple;
+
+  // helper data container
+  struct Path {
+    std::vector<float> lengths;  // segment lengths, negative = backwards
+    std::vector<char>  ctypes;   // S: straight, L: left, R: right
+    std::vector<float> x;        // x-positions
+    std::vector<float> y;        // y-positions
+    std::vector<float> yaw;      // orientations [rad]
+    std::vector<int> directions; // 1: forward, -1: backwards
+    float L{0.0};                // total length of path 
+  }; 
+
+
+  // forward declarations
+  void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
+                std::vector<char> ctypes, float step_size);
+
+
+  //  ===================== utility functions ============================
+  
   float pi_2_pi(float angle) {
     return fmod(angle + M_PI, 2.0 * M_PI) - M_PI;
   }
@@ -26,6 +48,13 @@ namespace ReedsShepp {
     return std::make_tuple(r, theta);
   }
 
+  void add_curve(std::vector<Path> &path, float t, float u, float v,
+                 std::vector<char> ctypes) {
+
+  }
+
+  // ======================== motion primitives =========================
+
   rs_tuple SLS(float x, float y, float phi) {
     phi = mod2pi(phi);
 
@@ -43,7 +72,7 @@ namespace ReedsShepp {
     }
 
     return std::make_tuple(false, 0.0, 0.0, 0.0);
-  }
+  } // end SLS
 
   rs_tuple LSL(float x, float y, float phi) {
     auto [u, t] = polar(x - sin(phi), y - 1.0 + cos(phi));
@@ -55,7 +84,7 @@ namespace ReedsShepp {
     }
 
     return std::make_tuple(false, 0.0, 0.0, 0.0);
-  }
+  } // end LSL
 
   rs_tuple LRL(float x, float y, float phi) {
     auto [u1, t1] = polar(x - sin(phi), y - 1.0 + cos(phi));
@@ -68,11 +97,10 @@ namespace ReedsShepp {
       if (t >= 0.0 >= u) {
         return std::make_tuple(true, t, u, v);
       }
-
     }
 
     return std::make_tuple(false, 0.0, 0.0, 0.0);
-  }
+  } // end LRL
 
   rs_tuple LSR(float x, float y, float phi) {
     auto [u1, t1] = polar(x + sin(phi), y - 1.0 - cos(phi));
@@ -89,10 +117,10 @@ namespace ReedsShepp {
     }
 
     return std::make_tuple(false, 0.0, 0.0, 0.0);
-  }
+  } // end LSR
 
   void SCS(float x, float y, float phi, 
-           std::vector<Path> paths, float step_size) {
+           std::vector<Path> &paths, float step_size) {
 
     auto [flag, t, u, v] = SLS(x, y, phi);
     if (flag) {
@@ -100,13 +128,41 @@ namespace ReedsShepp {
                std::vector<char>{'S', 'L', 'S'}, step_size);
     }
 
-    auto [flag2, t2, u2, v2] = SLS(x, -y, -phi);
+    std::tie(flag, t, u, v) = SLS(x, -y, -phi);
 
-    if (flag2) {
-      set_path(paths, std::vector<float>{t2, u2, v2},
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
                std::vector<char>{'S', 'R', 'S'}, step_size);
     }
-  }
+  } // end SCS
+
+  void CCC(float x, float y, float phi, 
+           std::vector<Path> &paths, float step_size) {
+
+    auto [flag, t, u, v] = LRL(x, y, phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{t, u, v},
+               std::vector<char>{'L', 'R', 'L'}, step_size);
+    }
+
+    std::tie(flag, t, u, v) = LRL(-x, y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'L', 'R', 'L'}, step_size);
+    }
+
+     std::tie(flag, t, u, v) = LRL(-x, y, -phi);
+    if (flag) {
+      set_path(paths, std::vector<float>{-t, -u, -v},
+               std::vector<char>{'L', 'R', 'L'}, step_size);
+    }
+    
+
+  } // end CCC
+
+  void CSC(float x, float y, float phi, 
+           std::vector<Path> &paths, float step_size) {
+  } // end CSC
 
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
                 std::vector<char> ctypes, float step_size) {
@@ -132,6 +188,5 @@ namespace ReedsShepp {
 
     paths.push_back(p);
   }
-
 
 }
