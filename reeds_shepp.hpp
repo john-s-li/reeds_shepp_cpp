@@ -3,11 +3,16 @@
 #include <tuple>
 #include <array>
 #include <iostream>
+#include <cassert>
 
 namespace ReedsShepp {
 
   typedef std::tuple<bool, float, float, float> rs_tuple;
+  typedef std::tuple<float, float, float, int> interp_tuple;
   typedef std::vector<std::vector<float>> interp_dist_list;
+  typedef std::tuple<std::vector<float>, std::vector<float>,
+                     std::vector<float>, std::vector<int>
+                     > lc_return;
   typedef float pose[3];
 
   // helper data container
@@ -318,5 +323,81 @@ namespace ReedsShepp {
 
     return idl;
   } // end calc_interpolate_dists_list
+
+  interp_tuple interpolate(float dist, float length,
+                           char mode, float max_curvature, 
+                           float ox, float oy, float oyaw) {
+
+    float x, y, yaw; 
+    int direction = length > 0.0 ? 1 : -1;
+
+    if (mode == 'S') { // straight
+      float x = ox + dist / max_curvature * cos(oyaw);
+      float y = oy + dist / max_curvature * sin(oyaw);
+      float yaw = oyaw;
+    }
+    else { // curve
+      float ldx = sin(dist) / max_curvature;
+      float ldy = 0.0;
+      
+      switch (mode) {
+        case 'L':
+          ldy = (1.0 - cos(dist)) / max_curvature;
+          yaw = oyaw + dist;
+          break;
+        case 'R':
+          ldy = (1.0 - cos(dist)) / -max_curvature;
+          yaw = oyaw - dist;
+          break;
+      }
+
+      float gdx = cos(-oyaw) * ldx + sin(-oyaw) * ldy;
+      float gdy = -sin(-oyaw) * ldx + cos(-oyaw) * ldy;
+
+      x = ox + gdx;
+      y = oy + gdy;
+    }
+
+    return std::make_tuple(x, y, yaw, direction);
+  } // end interpolate
+
+  lc_return generate_local_course(std::vector<float> lengths,
+                                  std::vector<char>  modes,
+                                  float max_curvature, float step_size) {
+
+    float x, y, yaw; int direction;
+    
+    interp_dist_list idl = calc_interpolate_dists_list(lengths, step_size);
+    
+    float origin_x , origin_y, origin_yaw = 0.0;
+    std::vector<float> xs, ys, yaws;
+    std::vector<int> directions;
+
+    assert(lengths.size() == idl.size() == modes.size() &&
+           "lengths, modes and interp_dist_list size not the same");
+    
+  
+    for (int i = 0; i < lengths.size(); i++) {
+      auto interp_dists = idl[i];
+      auto mode = modes[i];
+      auto length = lengths[i];
+
+      for (auto dist: interp_dists) {
+        std::tie(x, y, yaw, direction) = interpolate(dist, length, mode,
+                                                     max_curvature, origin_x,
+                                                     origin_y, origin_yaw);
+        xs.push_back(x);
+        ys.push_back(y);
+        yaws.push_back(yaw);
+        directions.push_back(direction);
+      }
+
+      origin_x = xs.back();
+      origin_y = ys.back();
+      origin_yaw = yaws.back();
+    }
+
+    return std::make_tuple(xs, ys, yaws, directions);
+  } // end generate_local_course
 
 }
