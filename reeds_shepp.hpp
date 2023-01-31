@@ -155,7 +155,7 @@ namespace ReedsShepp {
     if (flag) {
       set_path(paths, std::vector<float>{-t, -u, -v},
                std::vector<char>{'R', 'L', 'R'}, step_size);
-    }
+    } // end CCC
 
     // backwards
     float xb = x * cos(phi) + y * sin(phi);
