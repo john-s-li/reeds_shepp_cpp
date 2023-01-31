@@ -1,10 +1,14 @@
 #include <math.h>
 #include <vector>
 #include <tuple>
+#include <array>
+#include <iostream>
 
 namespace ReedsShepp {
 
   typedef std::tuple<bool, float, float, float> rs_tuple;
+  typedef std::vector<std::vector<float>> interp_dist_list;
+  typedef float pose[3];
 
   // helper data container
   struct Path {
@@ -44,6 +48,21 @@ namespace ReedsShepp {
     float r = sqrt(pow(x, 2) + pow(y, 2));
     float theta = atan2(y, x);
     return std::make_tuple(r, theta);
+  }
+
+  template <typename T>
+  std::vector<T> arange(T start, T stop, T step) {
+    /*
+     * Utility function to emulate behavior similar to that of numpy arange()
+     */
+
+    std::vector<T> l(static_cast<int>(stop / step));
+    T curr = l[0] = start;
+    std::generate(l.begin() + 1, l.end(),
+                  [&]() -> T { curr += step; return curr;
+                  });
+
+    return l;
   }
 
   // ======================== motion primitives =========================
@@ -240,6 +259,8 @@ namespace ReedsShepp {
 
   } // end CSC
 
+  // ====================== Core Functions ==============================
+
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
                 std::vector<char> ctypes, float step_size) {
 
@@ -247,22 +268,55 @@ namespace ReedsShepp {
 
     for (auto l: lengths) p.L += abs(l);
 
-    // check whether this path exists already
-    for (const auto path: paths) {
-      bool same_types = (path.ctypes == p.ctypes);
-
-      float path_l = 0.0;
-      for (auto l: path.lengths) path_l += abs(l);
-
-      bool close_lengths = abs(path_l - p.L) <= step_size;
-      
-      if (same_types && close_lengths) return;
-    }
-
     // check whether path is long enough
     if (p.L <= step_size) return; // path too short, don't insert
 
+    // check whether this path exists already
+    for (const auto path_i: paths) {
+      bool same_types = (path_i.ctypes == p.ctypes);
+
+      float l_path_i = 0.0;
+      for (auto l: path_i.lengths) l_path_i += abs(l);
+
+      bool close_lengths = abs(l_path_i - p.L) <= step_size;
+      
+      if (same_types && close_lengths) return;
+    }
+  
     paths.push_back(p);
-  }
+  } // end set_path
+
+  std::vector<Path> generate_path(pose q0, pose q1, 
+                                  float max_curvatuve, float step_size) {
+    float dx = q1[0] - q0[0];
+    float dy = q1[1] - q0[1];
+    float dth = q1[2] - q0[2];
+    
+    float c = cos(q0[2]);
+    float s = sin(q0[2]);
+
+    float x = (c * dx + s * dy) * max_curvatuve;
+    float y = (-s * dx + c * dy) * max_curvatuve;
+
+    std::vector<Path> paths;
+    SCS(x, y, dth, paths, step_size);
+    CSC(x, y, dth, paths, step_size);
+    CCC(x, y, dth, paths, step_size);
+
+    return paths;
+  } // end generate_path
+
+  interp_dist_list calc_interpolate_dists_list(std::vector<float> lengths,
+                                               float step_size) {
+    interp_dist_list idl;
+    for (auto l: lengths) {
+      float d_dist = l >= 0.0 ? step_size : -step_size;
+      auto interp_dists = arange<float>(0.0, l, d_dist);
+      interp_dists.push_back(l);
+      idl.push_back(interp_dists);
+    }
+
+    return idl;
+  } // end calc_interpolate_dists_list
 
 }
