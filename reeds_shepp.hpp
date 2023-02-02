@@ -374,10 +374,14 @@ namespace ReedsShepp {
     std::vector<int> directions;
 
     assert(lengths.size() == idl.size() == modes.size() &&
-           "lengths, modes and interp_dist_list size not the same");
+           "lengths, modes and interp_dist_list size not the same.");
     
   
-    for (int i = 0; i < lengths.size(); i++) {
+    int min_len = (lengths.size() == idl.size() == modes.size()) ?
+                   lengths.size() : 
+                   std::min({lengths.size(), idl.size(), modes.size()});
+
+    for (int i = 0; i < min_len; i++) {
       auto interp_dists = idl[i];
       auto mode = modes[i];
       auto length = lengths[i];
