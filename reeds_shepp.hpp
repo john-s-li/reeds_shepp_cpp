@@ -9,10 +9,11 @@ namespace ReedsShepp {
 
   typedef std::tuple<bool, float, float, float> rs_tuple;
   typedef std::tuple<float, float, float, int> interp_tuple;
-  typedef std::vector<std::vector<float>> interp_dist_list;
   typedef std::tuple<std::vector<float>, std::vector<float>,
-                     std::vector<float>, std::vector<int>
-                     > lc_return;
+                     std::vector<float>, std::vector<int>> lc_return;
+  
+  typedef std::vector<std::vector<float>> interp_dist_list;
+
   typedef float pose[3];
 
   // helper data container
@@ -24,7 +25,31 @@ namespace ReedsShepp {
     std::vector<float> yaw;      // orientations [rad]
     std::vector<int> directions; // 1: forward, -1: backwards
     float L{0.0};                // total length of path 
+
+    Path& operator=(const Path& other) {
+      lengths = other.lengths;
+      ctypes  = other.ctypes;
+      x = other.x;
+      y = other.y;
+      yaw = other.yaw;
+      L = other.L;
+
+      return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os,const Path& path);
   }; 
+
+  std::ostream& operator<<(std::ostream& os,const Path& path) {
+      // prints out the lenghts of each segment in the path
+      os << "[ ";
+      for (int i = 0; i < path.lengths.size() - 1; i++) {
+        os << path.lengths[i] << " , ";
+      }
+      os << path.lengths.back() << " ]\n";
+
+      return os;
+    }
 
   // forward declarations
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
@@ -68,6 +93,11 @@ namespace ReedsShepp {
                   });
 
     return l;
+  }
+
+  template <typename T>
+  T deg2rad(T degree) {
+    return (degree * M_PI) / 180.0;
   }
 
   // ======================== motion primitives =========================
@@ -269,7 +299,8 @@ namespace ReedsShepp {
   void set_path(std::vector<Path> &paths, std::vector<float> lengths,  
                 std::vector<char> ctypes, float step_size) {
 
-    Path p; p.ctypes = ctypes; p.lengths = lengths;
+    Path p; 
+    p.ctypes = ctypes; p.lengths = lengths;
 
     for (auto l: lengths) p.L += abs(l);
 
@@ -387,6 +418,7 @@ namespace ReedsShepp {
         std::tie(x, y, yaw, direction) = interpolate(dist, length, mode,
                                                      max_curvature, origin_x,
                                                      origin_y, origin_yaw);
+
         xs.push_back(x);
         ys.push_back(y);
         yaws.push_back(yaw);
@@ -397,6 +429,8 @@ namespace ReedsShepp {
       origin_y = ys.back();
       origin_yaw = yaws.back();
     }
+
+    std::cout << "xs size = " << xs.size() << std::endl;
 
     return std::make_tuple(xs, ys, yaws, directions);
   } // end generate_local_course
@@ -438,5 +472,28 @@ namespace ReedsShepp {
 
     return paths;
   } // end calc_paths
+
+  Path* reeds_shepp_path_planning(float sx, float sy, float syaw,
+                                  float gx, float gy, float gyaw,
+                                  float maxc, float step_size = 0.2) {
+
+    static std::vector<Path> paths; // to put local path vector element on 
+                                    // stack into the heap instead for external
+                                    // access
+    paths.clear();
+
+    paths = calc_paths(sx, sy, syaw, gx, gy, gyaw, maxc, step_size);
+
+    if (paths.empty()) return nullptr;
+
+    // search for the minimum cost path
+    sort(paths.begin(), paths.end(),
+         [](const Path& a, const Path& b) -> bool {
+           return abs(a.L) < abs(b.L); 
+         }
+    );
+
+    return &(paths[0]);
+  } // end reeds_shepp_path_planning
 
 }

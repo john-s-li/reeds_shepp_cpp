@@ -1,12 +1,32 @@
+#include <iostream>
+
 #include "reeds_shepp.hpp"
 
 int main() {
-  auto test_list = 
-    ReedsShepp::arange<float>(0.0, 1.0, 0.25);
+  std::cout << "Running Reeds-Shepp Path Planning" << std::endl;
 
-  for (auto t: test_list) {
-    std::cout << t << " ";
-  }
+  float start_x = -2.0;
+  float start_y = -5.0;
+  float start_yaw = ReedsShepp::deg2rad<float>(-30.0);
+
+  float end_x = 5.0;
+  float end_y = 5.0;
+  float end_yaw = ReedsShepp::deg2rad<float>(25.0);
+
+  float curvature = 0.1;
+  float step_size = 0.05;
+
+  ReedsShepp::Path* best_path = ReedsShepp::reeds_shepp_path_planning(
+                                                  start_x, start_y, start_yaw,
+                                                  end_x, end_y, end_yaw,
+                                                  curvature, step_size);
+
+  std::cout << "Best path lenghts = " << *best_path;     
+
+  std::cout << "Printing x values" << std::endl;
+  for(const auto x_elem: best_path->x) {
+    std::cout << x_elem << " ";
+  }            
 
   return 0;
 }
