@@ -370,12 +370,9 @@ namespace ReedsShepp {
     interp_dist_list idl = calc_interpolate_dists_list(lengths, step_size);
     
     float origin_x , origin_y, origin_yaw = 0.0;
+
     std::vector<float> xs, ys, yaws;
     std::vector<int> directions;
-
-    assert(lengths.size() == idl.size() == modes.size() &&
-           "lengths, modes and interp_dist_list size not the same.");
-    
   
     int min_len = (lengths.size() == idl.size() == modes.size()) ?
                    lengths.size() : 
@@ -403,5 +400,43 @@ namespace ReedsShepp {
 
     return std::make_tuple(xs, ys, yaws, directions);
   } // end generate_local_course
+
+  std::vector<Path> calc_paths(float sx, float sy, float syaw,
+                               float gx, float gy, float gyaw,
+                               float maxc, float step_size) {
+
+    pose q0 = {sx, sy, syaw};
+    pose q1 = {gx, gy, gyaw};
+
+    auto paths = generate_path(q0, q1, maxc, step_size);
+
+    std::vector<float> xs, ys, yaws; 
+    std::vector<int> directions;
+
+    for (auto path_i: paths) {
+      std::tie(xs, ys, yaws, directions) = generate_local_course(
+                                                    path_i.lengths,
+                                                    path_i.ctypes,
+                                                    maxc, step_size * maxc);
+      
+      std::vector<float> x_local, y_local, yaw_local;
+
+      // convert path to global coordinates
+      // length of xs, ys, and yaws are the same
+      for (int i = 0; i < xs.size(); i++) {
+        x_local.push_back(cos(-q0[2]) * xs[i] + sin(-q0[2]) * ys[i] + q0[0]);
+        y_local.push_back(-sin(-q0[2]) * xs[i] + cos(-q0[2]) * ys[i] + q0[1]);
+        yaw_local.push_back((yaws[i] + q0[2]));
+      }
+
+      path_i.x = x_local;
+      path_i.y = y_local;
+      path_i.yaw = yaw_local;
+      path_i.directions = directions;
+      path_i.L = path_i.L / maxc;
+    }
+
+    return paths;
+  } // end calc_paths
 
 }
