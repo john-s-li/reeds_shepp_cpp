@@ -113,7 +113,8 @@ namespace ReedsShepp {
       float v = sqrt(pow(x - xd, 2) + pow(y, 2)) - tan(phi / 2.0);
       return std::make_tuple(true, t, u, v);
     }
-    else if (y < 0.0 < phi < M_PI * 0.99) {
+    else if ((y < 0.0 && y < phi && y < M_PI * 0.99) &&
+             (phi > 0.0 && phi < 0.99 * M_PI)) {
       float v = -sqrt(pow(x - xd, 2) + pow(y, 2)) - tan(phi / 2.0);
       return std::make_tuple(true, t, u, v);
     }
@@ -171,6 +172,7 @@ namespace ReedsShepp {
 
     auto [flag, t, u, v] = SLS(x, y, phi);
     if (flag) {
+      std::cout << "SLS true" << std::endl;
       set_path(paths, std::vector<float>{t, u, v},
                std::vector<char>{'S', 'L', 'S'}, step_size);
     }
@@ -178,6 +180,8 @@ namespace ReedsShepp {
     std::tie(flag, t, u, v) = SLS(x, -y, -phi);
 
     if (flag) {
+      std::cout << "SLS neg true" << std::endl;
+
       set_path(paths, std::vector<float>{t, u, v},
                std::vector<char>{'S', 'R', 'S'}, step_size);
     }
@@ -336,8 +340,11 @@ namespace ReedsShepp {
 
     std::vector<Path> paths;
     SCS(x, y, dth, paths, step_size);
+    std::cout << "SCS path len = " << paths.size() << std::endl;
     CSC(x, y, dth, paths, step_size);
+    std::cout << "CSC path len = " << paths.size() << std::endl;
     CCC(x, y, dth, paths, step_size);
+    std::cout << "CCC path len = " << paths.size() << std::endl;
 
     return paths;
   } // end generate_path
