@@ -172,7 +172,6 @@ namespace ReedsShepp {
 
     auto [flag, t, u, v] = SLS(x, y, phi);
     if (flag) {
-      std::cout << "SLS true" << std::endl;
       set_path(paths, std::vector<float>{t, u, v},
                std::vector<char>{'S', 'L', 'S'}, step_size);
     }
@@ -180,8 +179,6 @@ namespace ReedsShepp {
     std::tie(flag, t, u, v) = SLS(x, -y, -phi);
 
     if (flag) {
-      std::cout << "SLS neg true" << std::endl;
-
       set_path(paths, std::vector<float>{t, u, v},
                std::vector<char>{'S', 'R', 'S'}, step_size);
     }
@@ -344,11 +341,8 @@ namespace ReedsShepp {
 
     std::vector<Path> paths;
     SCS(x, y, dth, paths, step_size);
-    std::cout << "SCS path len = " << paths.size() << std::endl;
     CSC(x, y, dth, paths, step_size);
-    std::cout << "CSC path len = " << paths.size() << std::endl;
     CCC(x, y, dth, paths, step_size);
-    std::cout << "CCC path len = " << paths.size() << std::endl;
 
     return paths;
   } // end generate_path
@@ -478,9 +472,7 @@ namespace ReedsShepp {
       path_i.directions = directions;
 
       for (int i = 0; i < path_i.lengths.size(); i++) {
-        //printf("path_i elem before = %.4f\n", path_i.lengths[i]);
         path_i.lengths[i] /= maxc;
-        //printf("path_i elem after = %.4f\n", path_i.lengths[i]);
       }
 
       path_i.L /= maxc;
