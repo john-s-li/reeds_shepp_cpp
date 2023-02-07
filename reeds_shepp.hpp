@@ -3,7 +3,6 @@
 #include <tuple>
 #include <array>
 #include <iostream>
-#include <cassert>
 
 namespace ReedsShepp {
 
