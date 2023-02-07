@@ -11,7 +11,7 @@ To use the code, just add the file `reeds_shepp.hpp` to your include directtory.
 
 ## Usage
 
-The Reeds-Shepp path data is contained in a `ReedsShepp::Path` data container. To get the best path between a starting pose `start_x, start_y, and start_yaw ` to an end goal pose `end_x, end_y, and end_yaw `, 
+The Reeds-Shepp path data is contained in a `ReedsShepp::Path` data container. To get the best path between a starting pose `start_x, start_y, start_yaw` to an end goal pose `end_x, end_y, end_yaw`: 
 
 ```c++
 #include "reeds_shepp.hpp"
@@ -23,7 +23,7 @@ int main() {
 }
 ```
 
-The attributes that can be accessed are
+The attributes that can be accessed are: 
 
 ```c++
 struct Path {
