@@ -457,7 +457,7 @@ namespace ReedsShepp {
     std::vector<float> xs, ys, yaws; 
     std::vector<int> directions;
 
-    for (auto path_i: paths) {
+    for (auto& path_i: paths) {
       std::tie(xs, ys, yaws, directions) = generate_local_course(
                                                     path_i.lengths,
                                                     path_i.ctypes,
@@ -477,7 +477,14 @@ namespace ReedsShepp {
       path_i.y = y_local;
       path_i.yaw = yaw_local;
       path_i.directions = directions;
-      path_i.L = path_i.L / maxc;
+
+      for (int i = 0; i < path_i.lengths.size(); i++) {
+        //printf("path_i elem before = %.4f\n", path_i.lengths[i]);
+        path_i.lengths[i] /= maxc;
+        //printf("path_i elem after = %.4f\n", path_i.lengths[i]);
+      }
+
+      path_i.L /= maxc;
     }
 
     return paths;

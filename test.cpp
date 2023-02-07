@@ -23,10 +23,5 @@ int main() {
 
   std::cout << "Best path lenghts = " << *best_path;     
 
-  std::cout << "Printing x values" << std::endl;
-  for(const auto x_elem: best_path->x) {
-    std::cout << x_elem << " ";
-  }            
-
   return 0;
 }
