@@ -84,9 +84,10 @@ namespace ReedsShepp {
   std::vector<T> arange(T start, T stop, T step) {
     /*
      * Utility function to emulate behavior similar to that of numpy arange()
+     * returns a vector of size stop/step with elements [start, stop]
      */
 
-    std::vector<T> l(static_cast<int>(stop / step));
+    std::vector<T> l(static_cast<int>(stop / step) + 1);
     T curr = l[0] = start;
     std::generate(l.begin() + 1, l.end(),
                   [&]() -> T { curr += step; return curr;
@@ -136,13 +137,13 @@ namespace ReedsShepp {
 
   rs_tuple LRL(float x, float y, float phi) {
     auto [u1, t1] = polar(x - sin(phi), y - 1.0 + cos(phi));
-
+     
     if (u1 <= 4.0) {
       float u = -2.0 * asin(u1 / 4.0);
       float t = mod2pi(t1 + 0.5 * u + M_PI);
       float v = mod2pi(phi - t + u);
 
-      if (t >= 0.0 >= u) {
+      if (t >= 0.0 && 0.0 >= u) {
         return std::make_tuple(true, t, u, v);
       }
     }
@@ -217,7 +218,7 @@ namespace ReedsShepp {
 
     // backwards
     float xb = x * cos(phi) + y * sin(phi);
-    float yb = x * cos(phi) - y * sin(phi);
+    float yb = x * sin(phi) - y * cos(phi);
 
     std::tie(flag, t, u, v) = LRL(xb, yb, phi);
     if (flag) {
@@ -309,7 +310,9 @@ namespace ReedsShepp {
     for (auto l: lengths) p.L += abs(l);
 
     // check whether path is long enough
-    if (p.L <= step_size) return; // path too short, don't insert
+    if (p.L <= step_size) {
+      return; // path too short, don't insert
+    }
 
     // check whether this path exists already
     for (const auto path_i: paths) {
@@ -320,7 +323,9 @@ namespace ReedsShepp {
 
       bool close_lengths = abs(l_path_i - p.L) <= step_size;
       
-      if (same_types && close_lengths) return;
+      if (same_types && close_lengths) {
+        return;
+      }
     }
   
     paths.push_back(p);
@@ -354,7 +359,7 @@ namespace ReedsShepp {
     interp_dist_list idl;
     for (auto l: lengths) {
       float d_dist = l >= 0.0 ? step_size : -step_size;
-      auto interp_dists = arange<float>(0.0, l, d_dist);
+      std::vector<float> interp_dists = arange<float>(0.0, l, d_dist);
       interp_dists.push_back(l);
       idl.push_back(interp_dists);
     }
@@ -370,9 +375,9 @@ namespace ReedsShepp {
     int direction = length > 0.0 ? 1 : -1;
 
     if (mode == 'S') { // straight
-      float x = ox + dist / max_curvature * cos(oyaw);
-      float y = oy + dist / max_curvature * sin(oyaw);
-      float yaw = oyaw;
+      x = ox + dist / max_curvature * cos(oyaw);
+      y = oy + dist / max_curvature * sin(oyaw);
+      yaw = oyaw;
     }
     else { // curve
       float ldx = sin(dist) / max_curvature;
@@ -436,8 +441,6 @@ namespace ReedsShepp {
       origin_y = ys.back();
       origin_yaw = yaws.back();
     }
-
-    std::cout << "xs size = " << xs.size() << std::endl;
 
     return std::make_tuple(xs, ys, yaws, directions);
   } // end generate_local_course
